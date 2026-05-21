@@ -96,3 +96,9 @@ def deteksi_hoaks(request: BeritaRequest):
         },
         "cek_fakta_internet": artikel_referensi
     }
+    
+    if __name__ == "__main__":
+        import uvicorn
+        # Menjalankan server di port 7860 yang diwajibkan oleh Hugging Face
+        uvicorn.run(app, host="0.0.0.0", port=7860)
+    

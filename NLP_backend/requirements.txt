@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+duckduckgo-search
+pydantic
+torch
+transformers
