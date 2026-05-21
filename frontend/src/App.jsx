@@ -2,18 +2,9 @@ import React, { useState } from 'react';
 
 export default function HoaxDetector() {
   const [text, setText] = useState('');
-  const [model, setModel] = useState('indobert');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
-
-  const aiModels = [
-    { value: 'svm', label: 'SVM (Baseline)' },
-    { value: '1d-cnn', label: '1D-CNN' },
-    { value: 'bilstm-attention', label: 'BiLSTM + Attention' },
-    { value: 'indobert', label: 'IndoBERT' },
-    { value: 'xlm-roberta', label: 'XLM-RoBERTa' },
-  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,14 +18,13 @@ export default function HoaxDetector() {
     setError('');
 
     try {
-      // PERBAIKAN 1: Mengubah URL sesuai dengan FastAPI kita
       const response = await fetch('https://chicknug19-aol-nlp.hf.space/api/deteksi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        // Backend kita sementara hanya butuh teks, tapi mengirim model juga tidak apa-apa
-        body: JSON.stringify({ teks: text, model: model }),
+        // Kita kunci (hardcode) pengiriman datanya menggunakan model indobert
+        body: JSON.stringify({ teks: text, model: 'indobert' }),
       });
 
       if (!response.ok) {
@@ -43,13 +33,12 @@ export default function HoaxDetector() {
 
       const data = await response.json();
       
-      // PERBAIKAN 2: Mencocokkan struktur JSON dari FastAPI ke State React
       setResult({
         status: data.status,
         label: data.analisis_ai.prediksi,
-        confidence: data.analisis_ai.keyakinan / 100, // Dibagi 100 agar jadi desimal (misal 99.97 -> 0.9997)
+        confidence: data.analisis_ai.keyakinan / 100, 
         keterangan: data.analisis_ai.keterangan,
-        referensi: data.cek_fakta_internet // Mengambil list berita dari internet
+        referensi: data.cek_fakta_internet 
       });
     } catch (err) {
       console.error(err);
@@ -101,49 +90,23 @@ export default function HoaxDetector() {
         
         <div className="bg-white/60 backdrop-blur-xl rounded-3xl shadow-2xl shadow-indigo-900/10 p-8 md:p-12 border border-white/70 relative overflow-hidden">      
           <div className="relative z-10">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Verifikasi Fakta Berita</h2>
-            <p className="text-slate-700 text-lg mb-10 leading-relaxed max-w-3xl font-medium">
-            Silahkan memeriksa keaslian dari informasi yang telah ditemukan. Tempelkan teks artikel atau berita yang mencurigakan di bawah, dan biarkan model menganalisis pola bahasanya.
-            </p>
+            <div className="text-center mb-10">
+                <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">Verifikasi Fakta Berita</h2>
+                <p className="text-slate-700 text-lg leading-relaxed max-w-3xl mx-auto font-medium">
+                Silahkan memeriksa keaslian dari informasi yang telah ditemukan. Tempelkan teks artikel atau berita yang mencurigakan di bawah, dan biarkan AI IndoBERT kami menganalisis pola bahasanya.
+                </p>
+            </div>
             <hr className="border-slate-300/50 mb-10" />
             
-            <form onSubmit={handleSubmit} className="space-y-10">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <div className="lg:col-span-4 flex flex-col space-y-5">
-                  <div>
-                    <label htmlFor="model-select" className="flex items-center text-base font-bold text-slate-800 mb-3 hover:text-teal-800 transition-colors">
-                       <svg className="w-5 h-5 mr-2.5 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                       Pilih model untuk analisis
-                    </label>
-                    <div className="relative group">
-                        <select
-                          id="model-select"
-                          value={model}
-                          onChange={(e) => setModel(e.target.value)}
-                          className="w-full p-4 bg-white/80 backdrop-blur-sm border-2 border-slate-200/80 rounded-xl focus:ring-2 focus:ring-teal-300 focus:border-teal-500 hover:border-slate-300 outline-none transition-all text-slate-800 font-bold cursor-pointer appearance-none shadow-sm"
-                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%230f766e'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundPosition: `right 1.25rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.2em 1.2em` }}
-                        >
-                          {aiModels.map((m) => (
-                            <option key={m.value} value={m.value} className='font-sans font-medium'>
-                              {m.label}
-                            </option>
-                          ))}
-                        </select>
-                    </div>
-                    <p className="mt-3 text-sm text-slate-600 font-medium leading-relaxed bg-white/50 backdrop-blur-sm p-3 rounded-lg border border-white/60">
-                      Pilih model yang ingin digunakan untuk melihat hasil klasifikasi yang lebih akurat. Disarankan menggunakan <strong>IndoBERT</strong>.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="lg:col-span-8 overflow-visible">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="w-full">
                   <label htmlFor="news-text" className="block text-base font-bold text-slate-800 mb-3 hover:text-blue-800 transition-colors">
                     Konten Berita untuk Dianalisis
                   </label>
                   <div className="relative group">
                     <textarea
                       id="news-text"
-                      rows="9"
+                      rows="8"
                       value={text}
                       onChange={(e) => {
                         setText(e.target.value);
@@ -163,14 +126,13 @@ export default function HoaxDetector() {
                       {error}
                     </p>
                   )}
-                </div>
               </div>
               
-              <div className="flex justify-end pt-6 border-t border-slate-300/50">
+              <div className="flex justify-center pt-2">
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`w-full lg:w-auto min-w-[220px] flex justify-center items-center gap-2.5 py-4 px-10 rounded-xl text-white font-extrabold text-lg transition-all duration-300
+                  className={`w-full md:w-2/3 lg:w-1/2 flex justify-center items-center gap-2.5 py-4 px-10 rounded-xl text-white font-extrabold text-lg transition-all duration-300
                     ${loading 
                       ? 'bg-slate-400 cursor-wait' 
                       : 'bg-gradient-to-r from-teal-500 via-blue-600 to-violet-600 hover:from-teal-600 hover:via-blue-700 hover:to-violet-700 shadow-lg shadow-blue-500/20 hover:shadow-violet-500/40 hover:-translate-y-1 active:translate-y-0 active:shadow-md'}`}
@@ -185,7 +147,7 @@ export default function HoaxDetector() {
                     </>
                   ) : (
                     <>
-                      Mulai Deteksi
+                      Mulai Deteksi dengan IndoBERT
                       <svg className="w-5 h-5 ml-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     </>
                   )}
@@ -231,13 +193,13 @@ export default function HoaxDetector() {
                         ></div>
                       </div>
                       <p className="text-xs text-slate-600 mt-4 text-center font-bold bg-slate-100/50 py-2 rounded-lg border border-slate-200">
-                        Dianalisis menggunakan model <strong className="text-teal-700 uppercase">{model.replace('-', ' ')}</strong> pada jaringan NLP.
+                        Dianalisis menggunakan model <strong className="text-teal-700 uppercase">INDOBERT</strong> pada jaringan NLP Kelompok 1.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* PERBAIKAN 3: UI untuk Menampilkan Hasil Cek Fakta dari Internet (RAG Hybrid) */}
+                {/* UI Cek Fakta (RAG Hybrid) */}
                 {result.referensi && result.referensi.length > 0 && (
                   <div className="mt-8">
                     <h4 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
