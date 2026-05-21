@@ -28,7 +28,7 @@ export default function HoaxDetector() {
 
     try {
       // PERBAIKAN 1: Mengubah URL sesuai dengan FastAPI kita
-      const response = await fetch('http://127.0.0.1:8000/api/deteksi', {
+      const response = await fetch('https://chicknug19-aol-nlp.hf.space/api/deteksi', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
