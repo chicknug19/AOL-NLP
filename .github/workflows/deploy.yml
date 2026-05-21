@@ -2,7 +2,7 @@ name: Sync to Hugging Face Spaces
 
 on:
   push:
-    branches: [ main ] # Pastikan branch kamu memang bernama 'main'
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -27,9 +27,17 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action Bot"
           
-          # 4. Masukkan semua file backend & commit
-          git add .
-          git commit -m "Deploy Backend to Hugging Face"
+          # 4. AKTIFKAN LFS DI DALAM ROBOT (Ini Penyelamatnya!)
+          git lfs install
+          git lfs track "*.safetensors"
+          git lfs track "*.keras"
+          git lfs track "*.pkl"
+          git lfs track "*.csv"
+          git lfs track "*.xlsx"
           
-          # 5. Force push HANYA isi folder backend ke Hugging Face
+          # 5. Masukkan semua file backend & commit
+          git add .
+          git commit -m "Deploy Backend to Hugging Face with LFS"
+          
+          # 6. Force push HANYA isi folder backend ke Hugging Face
           git push --force https://chicknug19:${HF_TOKEN}@huggingface.co/spaces/chicknug19/aol-nlp main
