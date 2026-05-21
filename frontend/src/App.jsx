@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import logoImg from './assets/logo.png'; 
+import bannerImg from './assets/bannerhoax.jpg';
+
 
 export default function HoaxDetector() {
   const [text, setText] = useState('');
@@ -60,7 +63,7 @@ export default function HoaxDetector() {
           <div className="flex items-center gap-3">
             <div className="p-1">
                 <img 
-                    src="src/assets/logo.png" 
+                    src={logoImg} 
                     alt="Smart Hoax Detector Logo" 
                     className="h-10 w-10 object-contain"
                 />
@@ -82,7 +85,7 @@ export default function HoaxDetector() {
       <main className="max-w-5xl mx-auto px-4 py-10 md:py-16">
         <div className="w-full rounded-3xl mb-10 overflow-hidden shadow-2xl shadow-blue-900/10 border-4 border-white/80">
             <img 
-                src="src/assets/bannerhoax.jpg" 
+                src={bannerImg}
                 alt="Banner Ilustrasi Deteksi Hoaks" 
                 className="w-full h-48 md:h-72 object-cover" 
             />
