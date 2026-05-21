@@ -14,30 +14,27 @@ jobs:
 
       - name: Push Backend to Hugging Face
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # Pastikan penamaan token sesuai dengan rahasia yang kamu buat di GitHub (HF_TOKEN)
+          HF_TOKEN: ${{ secrets.HF_TOKEN }} 
         run: |
-          # 1. Masuk secara spesifik ke folder backend
           cd NLP_backend
           
-          # 2. Buat repositori Git bayangan khusus untuk folder ini
           git init
           git checkout -b main
           
-          # 3. Atur identitas robot GitHub
           git config user.email "action@github.com"
           git config user.name "GitHub Action Bot"
           
-          # 4. AKTIFKAN LFS DI DALAM ROBOT (Ini Penyelamatnya!)
+          # Satpam LFS yang sudah kita lengkapi
           git lfs install
           git lfs track "*.safetensors"
           git lfs track "*.keras"
           git lfs track "*.pkl"
+          git lfs track "*.pickle" 
           git lfs track "*.csv"
           git lfs track "*.xlsx"
           
-          # 5. Masukkan semua file backend & commit
           git add .
           git commit -m "Deploy Backend to Hugging Face with LFS"
           
-          # 6. Force push HANYA isi folder backend ke Hugging Face
           git push --force https://chicknug19:${HF_TOKEN}@huggingface.co/spaces/chicknug19/aol-nlp main
