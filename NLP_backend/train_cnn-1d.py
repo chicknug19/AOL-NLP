@@ -69,7 +69,7 @@ def run_cnn():
     print("\nMemulai Training (Memproses 48.000 data)...")
     model.fit(X_train, y_train, batch_size=32, epochs=3, validation_split=0.1)
     
-    print("\n✅ Training Selesai! Memprediksi data uji...")
+    print("\nTraining Selesai! Memprediksi data uji...")
     y_pred_probs = model.predict(X_test)
     y_pred_classes = (y_pred_probs > 0.5).astype(int).flatten()
     
@@ -77,11 +77,11 @@ def run_cnn():
     # Target nama diurutkan: 0 = FAKTA, 1 = HOAX
     print(classification_report(y_test, y_pred_classes, target_names=['FAKTA', 'HOAX'], digits=3))
     
-    print("\n💾 Menyimpan model 1D-CNN...")
+    print("\nMenyimpan model 1D-CNN...")
     model.save('saved_model_cnn.keras')
     with open('tokenizer_cnn.pickle', 'wb') as handle:
         pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    print("✅ Model 1D-CNN Berhasil Disimpan!")
+    print("Model 1D-CNN Berhasil Disimpan!")
 
 if __name__ == "__main__":
     run_cnn()

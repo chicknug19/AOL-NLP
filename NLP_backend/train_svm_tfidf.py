@@ -37,13 +37,13 @@ def show_top_words(vectorizer, svm_model, n=20):
     fakta_indices = np.argsort(coef)[:n]
     
     print("\n" + "="*50)
-    print("🔍 DETEKTIF KATA: KATA PEMICU HOAKS TERKUAT")
+    print("DETEKTIF KATA: KATA PEMICU HOAKS TERKUAT")
     print("="*50)
     hoax_words = [words[i] for i in reversed(hoax_indices)]
     print(", ".join(hoax_words))
     
     print("\n" + "="*50)
-    print("✅ DETEKTIF KATA: KATA INDIKATOR FAKTA TERKUAT")
+    print("DETEKTIF KATA: KATA INDIKATOR FAKTA TERKUAT")
     print("="*50)
     fakta_words = [words[i] for i in fakta_indices]
     print(", ".join(fakta_words))
@@ -74,10 +74,10 @@ def run_svm():
     # Tampilkan senjata rahasia kita: Kata-kata biang kerok
     show_top_words(vectorizer, model)
     
-    print("💾 Menyimpan model SVM dan Vectorizer...")
+    print("Menyimpan model SVM dan Vectorizer...")
     joblib.dump(model, 'saved_model_svm_tfidf.pkl')
     joblib.dump(vectorizer, 'saved_vectorizer_svm_tfidf.pkl')
-    print("✅ Model SVM Berhasil Disimpan!")
+    print("Model SVM Berhasil Disimpan!")
 
 if __name__ == "__main__":
     run_svm()

@@ -54,15 +54,18 @@ def run_indobert():
     # Perhatikan kita menggunakan AutoModelForSequenceClassification (Tanpa TF)
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME, num_labels=2)
     
-    # Trainer API dari HuggingFace membuat proses training sangat rapi tanpa perlu for-loop manual
+   # Trainer API dari HuggingFace
     training_args = TrainingArguments(
         output_dir='./results',
         num_train_epochs=2,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
+        learning_rate=2e-5,          # Tambahkan ini: Belajar lebih pelan
+        weight_decay=0.01,           # Tambahkan ini: Hukuman jika model mulai menghafal
+        warmup_steps=100,            # Tambahkan ini: Pemanasan agar tidak kaget di awal
         logging_dir='./logs',
         logging_steps=100,
-        save_strategy="no" # Agar tidak memakan memori harddisk saat training
+        save_strategy="no" 
     )
     
     trainer = Trainer(

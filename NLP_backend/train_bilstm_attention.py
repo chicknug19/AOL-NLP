@@ -76,18 +76,18 @@ def run_bilstm():
     # Epoch diset 3 agar cukup waktu untuk melihat pergerakan Loss
     model.fit(X_train, y_train, batch_size=32, epochs=3, validation_split=0.1)
     
-    print("\n✅ Training Selesai! Memprediksi data uji...")
+    print("\nTraining Selesai! Memprediksi data uji...")
     y_pred_probs = model.predict(X_test)
     y_pred_classes = (y_pred_probs > 0.5).astype(int).flatten()
     
     print("\n================ HASIL EVALUASI BiLSTM + ATTENTION ================")
     print(classification_report(y_test, y_pred_classes, target_names=['FAKTA', 'HOAX'], digits=3))
     
-    print("\n💾 Menyimpan model BiLSTM-Attention...")
+    print("\nMenyimpan model BiLSTM-Attention...")
     model.save('saved_model_bilstm_attention.keras')
     with open('tokenizer_bilstm_attention.pickle', 'wb') as handle:
         pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
-    print("✅ Model BiLSTM-Attention Berhasil Disimpan!")
+    print("Model BiLSTM-Attention Berhasil Disimpan!")
 
 if __name__ == "__main__":
     run_bilstm()
