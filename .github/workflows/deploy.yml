@@ -14,10 +14,20 @@ jobs:
 
       - name: Push Backend to Hugging Face
         env:
-          # Pastikan penamaan token sesuai dengan rahasia yang kamu buat di GitHub (HF_TOKEN)
-          HF_TOKEN: ${{ secrets.HF_TOKEN }} 
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           cd NLP_backend
+          
+          # ========================================================
+          # OPERASI PEMBUANGAN BEBAN BERAT (HANYA DI DALAM ROBOT)
+          # Ini TIDAK akan menghapus file di laptop/GitHub kamu!
+          # ========================================================
+          rm -rf nlp_dataset/
+          rm -f *.keras
+          rm -f *.pkl
+          rm -f *.pickle
+          
+          # Sekarang folder ini hanya tersisa kodingan Python & IndoBERT
           
           git init
           git checkout -b main
@@ -25,16 +35,13 @@ jobs:
           git config user.email "action@github.com"
           git config user.name "GitHub Action Bot"
           
-          # Satpam LFS yang sudah kita lengkapi
           git lfs install
+          # Karena model lain sudah dihapus, kita cukup track safetensors
           git lfs track "*.safetensors"
-          git lfs track "*.keras"
-          git lfs track "*.pkl"
-          git lfs track "*.pickle" 
-          git lfs track "*.csv"
-          git lfs track "*.xlsx"
           
           git add .
-          git commit -m "Deploy Backend to Hugging Face with LFS"
+          git commit -m "Deploy Backend to Hugging Face (Diet Ekstrem)"
           
+          # Perintah --force di bawah ini akan mereset server Hugging Face
+          # dan membersihkan sisa sampah 1 GB sebelumnya
           git push --force https://chicknug19:${HF_TOKEN}@huggingface.co/spaces/chicknug19/aol-nlp main
