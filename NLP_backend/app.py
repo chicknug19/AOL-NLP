@@ -95,20 +95,12 @@ def deteksi_hoaks(request: BeritaRequest):
         print(f"🔍 [DEBUG] Kata kunci DDG: '{kata_kunci}'")
         
         with DDGS() as ddgs:
-            # Kita ambil 7 hasil (cadangan jika ada iklan yang menyusup)
-            hasil_pencarian = ddgs.text(kata_kunci, max_results=7, region='id-id', safesearch='moderate')
+            # Kita tambahkan backend='html' agar DDG mengira server ini adalah browser jadul (membantu tembus blokir)
+            hasil_pencarian = ddgs.text(kata_kunci, max_results=5, region='id-id', backend='html')
             
             for hasil in hasil_pencarian:
-                # Gabungkan judul dan isi, jadikan huruf kecil untuk dianalisis
-                # Gabungkan judul dan isi, jadikan huruf kecil untuk dianalisis
                 teks_hasil = (hasil.get('title', '') + " " + hasil.get('body', '')).lower()
-                
-                # FILTER ANTI-IKLAN YANG SUDAH DIPERBAIKI:
-                # Menggunakan regex \b (word boundary) agar 'ri' hanya cocok dengan kata 'ri' yang berdiri sendiri, 
-                # BUKAN di dalam kata 'dribbling' atau 'arithmetic'
                 syarat_akronim = any(re.search(rf"\b{a.lower()}\b", teks_hasil) for a in akronim_unik)
-                
-                # Hasil pencarian HARUS mengandung kata utuh dari akronim, ATAU kata pemilu/indonesia
                 syarat_lulus = "pemilu" in teks_hasil or "indonesia" in teks_hasil or syarat_akronim
                 
                 if syarat_lulus:
@@ -118,12 +110,38 @@ def deteksi_hoaks(request: BeritaRequest):
                         "cuplikan": hasil.get('body', '')
                     })
                 
-                # Hentikan pencarian jika sudah berhasil mengumpulkan 3 berita yang valid
                 if len(artikel_referensi) >= 3:
                     break
                     
+        # ==========================================
+        # 🚨 JALUR CADANGAN MUTLAK (FAIL-SAFE API)
+        # Jika DuckDuckGo diblokir, otomatis pakai Wikipedia Indonesia
+        # ==========================================
+        if len(artikel_referensi) == 0:
+            print("⚠️ DuckDuckGo diblokir Hugging Face. Mengaktifkan Wikipedia API...")
+            import requests
+            
+            # Merakit ulang kata kunci yang lebih ramah untuk Wikipedia
+            kata_kunci_wiki = " ".join(kata_final_list) + " pemilu"
+            wiki_url = f"https://id.wikipedia.org/w/api.php?action=query&list=search&srsearch={kata_kunci_wiki}&utf8=&format=json"
+            
+            headers = {'User-Agent': 'SmartHoaxDetector/1.0 (Binus University Project)'}
+            resp = requests.get(wiki_url, headers=headers)
+            
+            if resp.status_code == 200:
+                wiki_data = resp.json()
+                # Ambil 3 hasil teratas dari Wikipedia
+                for item in wiki_data.get('query', {}).get('search', [])[:3]:
+                    # Bersihkan tag HTML <span> yang bawaan dari Wikipedia
+                    snippet_bersih = re.sub(r'<[^>]+>', '', item['snippet'])
+                    artikel_referensi.append({
+                        "judul": item['title'] + " - Wikipedia Ensiklopedia Bebas",
+                        "link": f"https://id.wikipedia.org/wiki/{item['title'].replace(' ', '_')}",
+                        "cuplikan": snippet_bersih + "..."
+                    })
+                    
     except Exception as e:
-        print(f"Error pencarian DDG: {e}")
+        print(f"Error pencarian: {e}")
 
     # ==========================================
     # 3. KEMBALIKAN RESPON JSON KE REACT JS
