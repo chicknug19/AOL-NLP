@@ -8,6 +8,7 @@ import os
 import re
 import nltk
 from nltk.corpus import stopwords
+from collections import Counter
 
 # Mengunduh kamus NLTK saat server pertama kali menyala (Mencegah lag)
 print("⏳ Mengunduh kamus Stopwords NLTK...")
@@ -64,37 +65,36 @@ def deteksi_hoaks(request: BeritaRequest):
     
     label = "FAKTA" if pred_class == 0 else "HOAKS"
     
-    # ==========================================
-    # 2. PENCARIAN REAL-TIME (Cek Fakta Internet)
-    # ==========================================
     artikel_referensi = []
     try:
-        # 1. Bersihkan tanda baca, ubah ke huruf kecil, ambil kata yang panjangnya > 3
-        kata_bersih = [w for w in re.findall(r'\b\w+\b', input_teks.lower()) if len(w) > 3]
+        # 1. TANGKAP AKRONIM (KTP, KPU, DPR) SEBAGAI PRIORITAS TERTINGGI
+        akronim = re.findall(r'\b[A-Z]{2,}\b', input_teks)
+        akronim_unik = list(dict.fromkeys([a.lower() for a in akronim]))
         
-        # 2. Buang Stopwords NLTK dan kata umum tambahan
-        custom_words = {"secara", "baru", "dalam", "bersama", "menyusul", "adanya", "sebagai", "terkait", "keputusan", "telah", "dari", "yang", "untuk", "dengan", "pada", "saat", "oleh", "dan", "atau", "bisa", "buat", "kalian", "jangan"}
+        # 2. BERSIHKAN KATA (Perhatikan: len >= 3 agar ktp, kpu tidak hilang)
+        kata_bersih = re.findall(r'\b[a-z]{3,}\b', input_teks.lower())
+        
+        # 3. DAFTAR STOPWORDS (Buang kata gaul agar DDG tidak bingung)
+        custom_words = {"yang", "dari", "pada", "untuk", "dengan", "dan", "atau", "bisa", "buat", "kalian", "jangan", "aja", "mau", "gak", "ada", "lagi", "itu", "ini", "kok", "tetep", "banget", "sama", "pas", "nanti", "cuma", "sampai", "satu", "kita", "hari", "karena", "masih", "supaya", "sebelum", "dalam", "secara", "telah", "lalu", "akan", "juga", "jadi", "kami", "mereka", "banyak", "semua", "saat", "guys", "nya", "buat"}
         stopwords_id = NLTK_STOPWORDS.union(custom_words)
         
-        kata_penting = [w for w in kata_bersih if w not in stopwords_id]
+        # 4. AMBIL KATA PENTING SESUAI URUTAN MUNCUL (Bukan Abjad/Frekuensi)
+        kata_penting_urut = []
+        for w in kata_bersih:
+            if w not in stopwords_id and w not in akronim_unik:
+                if w not in kata_penting_urut: # Hindari duplikat
+                    kata_penting_urut.append(w)
+                    
+        # 5. GABUNGKAN & POTONG (Akronim + Kata Awal)
+        # Ambil 8 kata agar konteksnya panjang dan jelas
+        kata_final_list = akronim_unik + kata_penting_urut
+        kata_kunci = " ".join(kata_final_list[:8]) + " berita indonesia"
         
-        # 3. STRATEGI BARU: Urutkan berdasarkan panjang kata (kata terpanjang biasanya lebih spesifik)
-        # Hapus duplikat dulu dengan set(), lalu urutkan
-        kata_unik_terurut = sorted(list(set(kata_penting)), key=len, reverse=True)
-        
-        # 4. Ambil maksimal 5 kata terpanjang/terunik
-        kata_kunci_list = kata_unik_terurut[:5]
-        
-        # 5. Gabungkan dengan 3 kata PERTAMA dari kalimat asli untuk menjaga konteks
-        konteks_awal = [w for w in kata_penting[:3] if w not in kata_kunci_list]
-        
-        kata_kunci_final = " ".join(konteks_awal + kata_kunci_list)
-        
-        print(f"🔍 Mencari di internet dengan kata kunci tajam: '{kata_kunci_final}'")
+        print(f"🔍 [DEBUG] Kata kunci DDG: '{kata_kunci}'")
         
         with DDGS() as ddgs:
-            # region='id-id' sangat penting agar hasil lokal Indonesia yang diutamakan
-            hasil_pencarian = ddgs.text(kata_kunci_final + " berita", max_results=3, region='id-id', safesearch='moderate')
+            # Cari berita spesifik Indonesia
+            hasil_pencarian = ddgs.text(kata_kunci, max_results=3, region='id-id', safesearch='moderate')
             
             for hasil in hasil_pencarian:
                 artikel_referensi.append({
