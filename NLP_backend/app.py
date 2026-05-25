@@ -100,12 +100,16 @@ def deteksi_hoaks(request: BeritaRequest):
             
             for hasil in hasil_pencarian:
                 # Gabungkan judul dan isi, jadikan huruf kecil untuk dianalisis
+                # Gabungkan judul dan isi, jadikan huruf kecil untuk dianalisis
                 teks_hasil = (hasil.get('title', '') + " " + hasil.get('body', '')).lower()
                 
-                # FILTER ANTI-IKLAN: Syarat mutlak! 
-                # Hasil pencarian HARUS mengandung kata "pemilu", "indonesia", atau akronim kita (misal: "ktp")
-                # Iklan Valorant/Roblox pasti tidak akan lolos filter ini.
-                syarat_lulus = "pemilu" in teks_hasil or "indonesia" in teks_hasil or any(a.lower() in teks_hasil for a in akronim_unik)
+                # FILTER ANTI-IKLAN YANG SUDAH DIPERBAIKI:
+                # Menggunakan regex \b (word boundary) agar 'ri' hanya cocok dengan kata 'ri' yang berdiri sendiri, 
+                # BUKAN di dalam kata 'dribbling' atau 'arithmetic'
+                syarat_akronim = any(re.search(rf"\b{a.lower()}\b", teks_hasil) for a in akronim_unik)
+                
+                # Hasil pencarian HARUS mengandung kata utuh dari akronim, ATAU kata pemilu/indonesia
+                syarat_lulus = "pemilu" in teks_hasil or "indonesia" in teks_hasil or syarat_akronim
                 
                 if syarat_lulus:
                     artikel_referensi.append({
