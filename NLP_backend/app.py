@@ -83,33 +83,43 @@ def deteksi_hoaks(request: BeritaRequest):
         
         kata_penting = [w for w in kata_bersih if w not in stopwords_id]
         
-        # 4. AMBIL 3 KATA TERPANJANG (Kata panjang = Kata spesifik/resmi)
+        # 4. AMBIL 2 KATA TERPANJANG SAJA
         kata_unik_terurut = sorted(list(set(kata_penting)), key=len, reverse=True)
         kata_terpanjang = kata_unik_terurut[:2] 
         
-        # 5. RAKIT KATA KUNCI LASER (Maksimal 3-4 Kata Saja!)
-        # Ambil 1 akronim saja (jika ada) + 2 kata terpanjang + 1 kata konteks
+        # 5. RAKIT KATA KUNCI LASER
         akronim_utama = akronim_unik[:1] if akronim_unik else []
-        
         kata_final_list = akronim_utama + kata_terpanjang
-        
-        # Kunci utamanya: Tambahkan kata "pemilu" agar DuckDuckGo langsung paham konteksnya
-        kata_kunci = " ".join(kata_final_list) + " pemilu"
+        kata_kunci = " ".join(kata_final_list) + " pemilu indonesia"
         
         print(f"🔍 [DEBUG] Kata kunci DDG: '{kata_kunci}'")
         
         with DDGS() as ddgs:
-            # Tetap gunakan id-id
-            hasil_pencarian = ddgs.text(kata_kunci, max_results=3, region='id-id', safesearch='moderate')
+            # Kita ambil 7 hasil (cadangan jika ada iklan yang menyusup)
+            hasil_pencarian = ddgs.text(kata_kunci, max_results=7, region='id-id', safesearch='moderate')
             
             for hasil in hasil_pencarian:
-                artikel_referensi.append({
-                    "judul": hasil['title'],
-                    "link": hasil['href'],
-                    "cuplikan": hasil['body']
-                })
+                # Gabungkan judul dan isi, jadikan huruf kecil untuk dianalisis
+                teks_hasil = (hasil.get('title', '') + " " + hasil.get('body', '')).lower()
+                
+                # FILTER ANTI-IKLAN: Syarat mutlak! 
+                # Hasil pencarian HARUS mengandung kata "pemilu", "indonesia", atau akronim kita (misal: "ktp")
+                # Iklan Valorant/Roblox pasti tidak akan lolos filter ini.
+                syarat_lulus = "pemilu" in teks_hasil or "indonesia" in teks_hasil or any(a.lower() in teks_hasil for a in akronim_unik)
+                
+                if syarat_lulus:
+                    artikel_referensi.append({
+                        "judul": hasil.get('title', 'Tanpa Judul'),
+                        "link": hasil.get('href', ''),
+                        "cuplikan": hasil.get('body', '')
+                    })
+                
+                # Hentikan pencarian jika sudah berhasil mengumpulkan 3 berita yang valid
+                if len(artikel_referensi) >= 3:
+                    break
+                    
     except Exception as e:
-        print(f"Error pencarian: {e}")
+        print(f"Error pencarian DDG: {e}")
 
     # ==========================================
     # 3. KEMBALIKAN RESPON JSON KE REACT JS
