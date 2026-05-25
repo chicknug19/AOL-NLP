@@ -69,24 +69,32 @@ def deteksi_hoaks(request: BeritaRequest):
     # ==========================================
     artikel_referensi = []
     try:
-        # Gabungkan NLTK dengan kata-kata khas birokrasi politik yang sering lolos
-        custom_words = {"secara", "baru", "dalam", "bersama", "menyusul", "adanya", "sebagai", "terkait", "keputusan", "telah"}
+        # 1. Bersihkan tanda baca, ubah ke huruf kecil, ambil kata yang panjangnya > 3
+        kata_bersih = [w for w in re.findall(r'\b\w+\b', input_teks.lower()) if len(w) > 3]
+        
+        # 2. Buang Stopwords NLTK dan kata umum tambahan
+        custom_words = {"secara", "baru", "dalam", "bersama", "menyusul", "adanya", "sebagai", "terkait", "keputusan", "telah", "dari", "yang", "untuk", "dengan", "pada", "saat", "oleh", "dan", "atau", "bisa", "buat", "kalian", "jangan"}
         stopwords_id = NLTK_STOPWORDS.union(custom_words)
         
-        # Bersihkan tanda baca dan jadikan huruf kecil
-        kata_bersih = re.findall(r'\b\w+\b', input_teks.lower())
+        kata_penting = [w for w in kata_bersih if w not in stopwords_id]
         
-        # Filter: Bukan stopword DAN panjang kata lebih dari 3 huruf
-        kata_kunci_list = [w for w in kata_bersih if w not in stopwords_id and len(w) > 3]
+        # 3. STRATEGI BARU: Urutkan berdasarkan panjang kata (kata terpanjang biasanya lebih spesifik)
+        # Hapus duplikat dulu dengan set(), lalu urutkan
+        kata_unik_terurut = sorted(list(set(kata_penting)), key=len, reverse=True)
         
-        # Ambil 10 kata pertama
-        kata_kunci = " ".join(kata_kunci_list[:10])
+        # 4. Ambil maksimal 5 kata terpanjang/terunik
+        kata_kunci_list = kata_unik_terurut[:5]
         
-        print(f"🔍 Mencari di internet dengan kata kunci: '{kata_kunci}'")
+        # 5. Gabungkan dengan 3 kata PERTAMA dari kalimat asli untuk menjaga konteks
+        konteks_awal = [w for w in kata_penting[:3] if w not in kata_kunci_list]
+        
+        kata_kunci_final = " ".join(konteks_awal + kata_kunci_list)
+        
+        print(f"🔍 Mencari di internet dengan kata kunci tajam: '{kata_kunci_final}'")
         
         with DDGS() as ddgs:
-            # safesearch='moderate' membantu membuang hasil web spam/random
-            hasil_pencarian = ddgs.text(kata_kunci, max_results=3, region='id-id', safesearch='moderate')
+            # region='id-id' sangat penting agar hasil lokal Indonesia yang diutamakan
+            hasil_pencarian = ddgs.text(kata_kunci_final + " berita", max_results=3, region='id-id', safesearch='moderate')
             
             for hasil in hasil_pencarian:
                 artikel_referensi.append({
