@@ -203,24 +203,37 @@ export default function HoaxDetector() {
                 </div>
 
                 {/* UI Cek Fakta (RAG Hybrid) */}
-                {result.referensi && result.referensi.length > 0 && (
+                {result.referensi && (
                   <div className="mt-8">
                     <h4 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
                       <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                       Cek Fakta Internet (Referensi Terkait)
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {result.referensi.map((ref, index) => (
-                        <a key={index} href={ref.link} target="_blank" rel="noopener noreferrer" className="bg-white p-5 rounded-2xl shadow-md border border-slate-200 hover:shadow-xl hover:border-blue-300 transition-all group flex flex-col h-full">
-                          <h5 className="font-bold text-slate-800 group-hover:text-blue-700 line-clamp-2 mb-3">{ref.judul}</h5>
-                          <p className="text-sm text-slate-600 line-clamp-3 mb-4 flex-grow">{ref.cuplikan}</p>
-                          <span className="text-xs font-semibold text-blue-600 mt-auto flex items-center gap-1">
-                            Baca artikel asli
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                          </span>
-                        </a>
-                      ))}
-                    </div>
+                    
+                    {result.referensi.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {result.referensi.map((ref, index) => (
+                          <a key={index} href={ref.link} target="_blank" rel="noopener noreferrer" className="bg-white p-5 rounded-2xl shadow-md border border-slate-200 hover:shadow-xl hover:border-blue-300 transition-all group flex flex-col h-full">
+                            <h5 className="font-bold text-slate-800 group-hover:text-blue-700 line-clamp-2 mb-3">{ref.judul}</h5>
+                            <p className="text-sm text-slate-600 line-clamp-3 mb-4 flex-grow">{ref.cuplikan}</p>
+                            <span className="text-xs font-semibold text-blue-600 mt-auto flex items-center gap-1">
+                              Baca artikel asli
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-orange-50/80 backdrop-blur-sm p-6 rounded-2xl shadow-md border border-orange-200 flex flex-col md:flex-row items-start gap-4">
+                        <svg className="w-10 h-10 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <div>
+                          <h5 className="font-bold text-slate-800 mb-2 text-lg">Referensi Valid Tidak Ditemukan</h5>
+                          <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                            Sistem mesin pencari kami telah memblokir hasil yang tidak relevan (iklan/spam) dan <strong>tidak dapat menemukan satu pun artikel berita resmi atau sumber terpercaya</strong> yang memvalidasi klaim pada teks di atas. Ketiadaan bukti di internet ini merupakan indikasi yang sangat kuat bahwa teks tersebut adalah karangan atau hoaks.
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
