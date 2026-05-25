@@ -1,6 +1,7 @@
 fastapi
 uvicorn
-duckduckgo-search
 pydantic
 torch
 transformers
+duckduckgo-search
+nltk
