@@ -6,6 +6,16 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from duckduckgo_search import DDGS
 import os
 import re
+import nltk
+from nltk.corpus import stopwords
+
+# Mengunduh kamus NLTK saat server pertama kali menyala (Mencegah lag)
+print("⏳ Mengunduh kamus Stopwords NLTK...")
+nltk.download('stopwords', quiet=True)
+NLTK_STOPWORDS = set(stopwords.words('indonesian'))
+print("✅ Kamus NLTK Siap!")
+
+# ... (Kodingan inisiasi FastAPI dan Model IndoBERT di bawahnya) ...
 
 # Menghilangkan warning terminal
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -59,21 +69,25 @@ def deteksi_hoaks(request: BeritaRequest):
     # ==========================================
     artikel_referensi = []
     try:
-        # Daftar kata sambung bahasa Indonesia yang harus dibuang
-        stopwords_id = {"dan", "yang", "di", "ke", "dari", "pada", "ini", "itu", "untuk", "dengan", "adalah", "bahwa", "mengonfirmasi", "adanya", "sebagai", "menyebutkan", "terkait"}
+        # Gabungkan NLTK dengan kata-kata khas birokrasi politik yang sering lolos
+        custom_words = {"secara", "baru", "dalam", "bersama", "menyusul", "adanya", "sebagai", "terkait", "keputusan", "telah"}
+        stopwords_id = NLTK_STOPWORDS.union(custom_words)
         
         # Bersihkan tanda baca dan jadikan huruf kecil
         kata_bersih = re.findall(r'\b\w+\b', input_teks.lower())
         
-        # Ambil kata yang bermakna saja (bukan stopword), batasi 6 kata pertama
-        kata_kunci_list = [w for w in kata_bersih if w not in stopwords_id][:6]
-        kata_kunci = " ".join(kata_kunci_list)
+        # Filter: Bukan stopword DAN panjang kata lebih dari 3 huruf
+        kata_kunci_list = [w for w in kata_bersih if w not in stopwords_id and len(w) > 3]
         
-        print(f"🔍 Mencari di internet dengan kata kunci: '{kata_kunci}'") # Untuk ngecek di terminal
+        # Ambil 10 kata pertama
+        kata_kunci = " ".join(kata_kunci_list[:10])
         
-        # Mencari artikel teratas
+        print(f"🔍 Mencari di internet dengan kata kunci: '{kata_kunci}'")
+        
         with DDGS() as ddgs:
-            hasil_pencarian = ddgs.text(kata_kunci, max_results=3, region='id-id')
+            # safesearch='moderate' membantu membuang hasil web spam/random
+            hasil_pencarian = ddgs.text(kata_kunci, max_results=3, region='id-id', safesearch='moderate')
+            
             for hasil in hasil_pencarian:
                 artikel_referensi.append({
                     "judul": hasil['title'],
