@@ -5,3 +5,4 @@ torch
 transformers
 nltk
 duckduckgo-search
+requests
