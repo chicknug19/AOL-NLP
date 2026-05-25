@@ -3,5 +3,5 @@ uvicorn
 pydantic
 torch
 transformers
-duckduckgo-search
 nltk
+duckduckgo-search
