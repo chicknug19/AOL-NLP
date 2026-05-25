@@ -65,35 +65,41 @@ def deteksi_hoaks(request: BeritaRequest):
     
     label = "FAKTA" if pred_class == 0 else "HOAKS"
     
+    # ==========================================
+    # 2. PENCARIAN REAL-TIME (Cek Fakta Internet)
+    # ==========================================
     artikel_referensi = []
     try:
-        # 1. TANGKAP AKRONIM (KTP, KPU, DPR) SEBAGAI PRIORITAS TERTINGGI
+        # 1. TANGKAP AKRONIM (KTP, KPU, PPS dll) SEBAGAI PRIORITAS MUTLAK
         akronim = re.findall(r'\b[A-Z]{2,}\b', input_teks)
-        akronim_unik = list(dict.fromkeys([a.lower() for a in akronim]))
+        akronim_unik = list(dict.fromkeys(akronim)) # Pertahankan huruf besar
         
-        # 2. BERSIHKAN KATA (Perhatikan: len >= 3 agar ktp, kpu tidak hilang)
-        kata_bersih = re.findall(r'\b[a-z]{3,}\b', input_teks.lower())
+        # 2. BERSIHKAN KATA (Ambil huruf kecil, panjang minimal 4 huruf)
+        kata_bersih = re.findall(r'\b[a-z]{4,}\b', input_teks.lower())
         
-        # 3. DAFTAR STOPWORDS (Buang kata gaul agar DDG tidak bingung)
-        custom_words = {"yang", "dari", "pada", "untuk", "dengan", "dan", "atau", "bisa", "buat", "kalian", "jangan", "aja", "mau", "gak", "ada", "lagi", "itu", "ini", "kok", "tetep", "banget", "sama", "pas", "nanti", "cuma", "sampai", "satu", "kita", "hari", "karena", "masih", "supaya", "sebelum", "dalam", "secara", "telah", "lalu", "akan", "juga", "jadi", "kami", "mereka", "banyak", "semua", "saat", "guys", "nya", "buat"}
+        # 3. DAFTAR STOPWORDS (Buang semua kata gaul perusak pencarian)
+        custom_words = {"yang", "dari", "pada", "untuk", "dengan", "atau", "bisa", "buat", "kalian", "jangan", "mau", "gak", "ada", "lagi", "itu", "ini", "kok", "tetep", "banget", "sama", "pas", "nanti", "cuma", "sampai", "satu", "kita", "hari", "karena", "masih", "supaya", "sebelum", "dalam", "secara", "telah", "lalu", "akan", "juga", "jadi", "kami", "mereka", "banyak", "semua", "saat", "guys", "nya", "aja", "kalo", "udah", "dong", "sih"}
         stopwords_id = NLTK_STOPWORDS.union(custom_words)
         
-        # 4. AMBIL KATA PENTING SESUAI URUTAN MUNCUL (Bukan Abjad/Frekuensi)
-        kata_penting_urut = []
-        for w in kata_bersih:
-            if w not in stopwords_id and w not in akronim_unik:
-                if w not in kata_penting_urut: # Hindari duplikat
-                    kata_penting_urut.append(w)
-                    
-        # 5. GABUNGKAN & POTONG (Akronim + Kata Awal)
-        # Ambil 8 kata agar konteksnya panjang dan jelas
-        kata_final_list = akronim_unik + kata_penting_urut
-        kata_kunci = " ".join(kata_final_list[:8]) + " berita indonesia"
+        kata_penting = [w for w in kata_bersih if w not in stopwords_id]
+        
+        # 4. AMBIL 3 KATA TERPANJANG (Kata panjang = Kata spesifik/resmi)
+        kata_unik_terurut = sorted(list(set(kata_penting)), key=len, reverse=True)
+        kata_terpanjang = kata_unik_terurut[:2] 
+        
+        # 5. RAKIT KATA KUNCI LASER (Maksimal 3-4 Kata Saja!)
+        # Ambil 1 akronim saja (jika ada) + 2 kata terpanjang + 1 kata konteks
+        akronim_utama = akronim_unik[:1] if akronim_unik else []
+        
+        kata_final_list = akronim_utama + kata_terpanjang
+        
+        # Kunci utamanya: Tambahkan kata "pemilu" agar DuckDuckGo langsung paham konteksnya
+        kata_kunci = " ".join(kata_final_list) + " pemilu"
         
         print(f"🔍 [DEBUG] Kata kunci DDG: '{kata_kunci}'")
         
         with DDGS() as ddgs:
-            # Cari berita spesifik Indonesia
+            # Tetap gunakan id-id
             hasil_pencarian = ddgs.text(kata_kunci, max_results=3, region='id-id', safesearch='moderate')
             
             for hasil in hasil_pencarian:
